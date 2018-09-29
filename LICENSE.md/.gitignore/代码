@@ -1,0 +1,48 @@
+import requests
+import json
+import re
+
+'''
+========================
+作者：17级信管柯正轩
+备注：第一次写，爬虫效率不高（主要是因为还没仔细学过多线程233）。爬虫效率的问题会在下一版（如果有的话）改进，谢谢大家
+========================
+'''
+
+def get_comment(head_url, count):
+    #x是用来计数的
+    x = 1
+    #由于不会使用数据库（还没学完呢），所以所有的都爬到一个txt里了，学姐们如果需要爬进数据库请自行修改，谢谢~
+    fp = open("项目.txt", "a", encoding="utf8")
+    while x <= count:
+        #用try请求，出错标记
+        try:
+            url = head_url
+            resp = requests.get(url)
+            resp.encoding = resp.apparent_encoding
+            comment_json = json.loads(resp.text)
+            comments_list = comment_json["data"]["data"]
+            for commment_item in comments_list:
+                #这是用户名，预先做出来了需要可以加
+                username = commment_item["user"]["screen_name"]
+                #这是原始回复
+                comment = commment_item["text"]
+                #过滤一下
+                label_filter = re.compile(r'</?\w+[^>]*>', re.S)
+                comment = re.sub(label_filter, '', comment)
+                #写入就完事了，写完一条就换行
+                fp.write(comment)
+                fp.write('\n')
+            print(x)
+        #try不动就干这个，提示几号异常了
+        except:
+            print(str(x) + "遇到异常")
+            continue
+        x += 1
+    fp.close()
+
+if __name__ == "__main__":
+    #里头是json格式文件的地址，在原微博F12后就可以找到（没错就是那个一片乱码，改一下编码就行）
+    head_url = "https://m.weibo.cn/comments/hotflow?id=4093917504718989&mid=4093917504718989&max_id_type=0"
+    #可修改后面的那个数，是总爬取次数。暂且先来7万次吧
+    get_comment(head_url, 70000)
